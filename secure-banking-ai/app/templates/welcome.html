@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Welcome - SecureBank{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1>Welcome to SecureBank</h1>
+    <p>Your secure banking solution.</p>
+    <a href="{{ url_for('main.signup') }}" class="btn btn-primary">Create Account</a>
+    <a href="{{ url_for('main.login') }}" class="btn btn-success">Login</a>
+</div>
+{% endblock %}

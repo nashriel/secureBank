@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transfer Funds</title>
+</head>
+<body>
+    <h2>Transfer Funds</h2>
+    <p>Available Balance: ${{ balance }}</p>
+
+    <form method="POST">
+        <div>
+            <label>Recipient Account Number</label>
+            <input type="text" name="account_number" placeholder="Enter account number">
+        </div>
+        <div>
+            <label>Recipient UPI ID</label>
+            <input type="text" name="upi_id" placeholder="e.g., user@bank">
+        </div>
+        <div>
+            <label>Amount</label>
+            <input type="number" step="0.01" name="amount" required>
+        </div>
+        <div>
+            <label>Remarks</label>
+            <input type="text" name="remarks" placeholder="Optional">
+        </div>
+        <button type="submit">Transfer</button>
+    </form>
+
+    <p><a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a></p>
+</body>
+</html>
