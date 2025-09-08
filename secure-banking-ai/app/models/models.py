@@ -67,6 +67,8 @@ class Card(db.Model):
     cvv = db.Column(db.String(6))
     blocked = db.Column(db.Boolean, default=False)
     limit = db.Column(db.Float, default=5000.0)
+    pin = db.Column(db.String(128))  # store hashed PIN
+
 
 # ---------------- Subscriptions ----------------
 class Subscription(db.Model):

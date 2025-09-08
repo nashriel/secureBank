@@ -8,7 +8,7 @@ from app.models.models import Login, Account, Transaction, Upi, Card, Subscripti
 app = create_app()
 with app.app_context():
 
-    # Reset database
+    # ---------------- Reset database -------------------
     db.drop_all()
     db.create_all()
     print("✅ Database reset. Tables created!")
@@ -29,7 +29,7 @@ with app.app_context():
             fullname=fullname,
             email=email,
             username=username,
-            phone=f"+91{random.randint(6000000000, 9999999999)}",  # ensure phone field is filled
+            phone=f"+91{random.randint(6000000000, 9999999999)}",
             password=generate_password_hash(password, method="pbkdf2:sha256"),
             is_admin=(username == "admin"),
             created_at=datetime.now(timezone.utc),
@@ -149,10 +149,11 @@ with app.app_context():
             cvv=f"{random.randint(100,999)}",
             blocked=random.choice([True, False]),
             limit=round(random.uniform(1000, 10000), 2),
+            pin=generate_password_hash(f"{random.randint(1000,9999)}")  # PIN hashed
         )
         db.session.add(card)
     db.session.commit()
-    print("💳 Cards added!")
+    print("💳 Cards with PINs added!")
 
     # ------------------- Subscriptions -------------------
     for user in users:

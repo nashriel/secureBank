@@ -5,34 +5,67 @@
   <h3>{{ username | upper }}'s Subscriptions</h3>
   <div class="card shadow-sm mt-3">
     <div class="card-body">
-      <p>Manage your subscriptions here. (Example placeholders)</p>
+      <p>Manage your subscriptions here.</p>
+
+      <!-- Add Subscription Form -->
+      <form method="POST" class="row g-3 mb-4">
+        <div class="col-md-4">
+          <input type="text" class="form-control" name="name" placeholder="Subscription Name" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" step="0.01" class="form-control" name="amount" placeholder="Amount ($)" required>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" name="frequency" required>
+            <option value="">Select Frequency</option>
+            <option value="Weekly">Weekly</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Yearly">Yearly</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-success w-100">Add Subscription</button>
+        </div>
+      </form>
+
+      <!-- Subscriptions Table -->
       <table class="table table-bordered">
         <thead>
           <tr>
-            <th>Subscription Name</th>
-            <th>Amount</th>
+            <th>Name</th>
+            <th>Amount ($)</th>
+            <th>Frequency</th>
+            <th>Next Billing</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Netflix</td>
-            <td>$12.99</td>
-            <td>Active</td>
-            <td><button class="btn btn-sm btn-danger">Cancel</button></td>
-          </tr>
-          <tr>
-            <td>Spotify</td>
-            <td>$9.99</td>
-            <td>Active</td>
-            <td><button class="btn btn-sm btn-danger">Cancel</button></td>
-          </tr>
-          <tr>
-            <td colspan="4" class="text-center text-muted">Add your subscriptions dynamically!</td>
-          </tr>
+          {% if subscriptions %}
+            {% for sub in subscriptions %}
+            <tr>
+              <td>{{ sub.name }}</td>
+              <td>{{ sub.amount }}</td>
+              <td>{{ sub.frequency }}</td>
+              <td>{{ sub.next_billing_date.strftime('%d-%m-%Y') if sub.next_billing_date else 'N/A' }}</td>
+              <td>{{ 'Active' if sub.active else 'Inactive' }}</td>
+              <td>
+                <a href="{{ url_for('main.delete_subscription_view', sub_id=sub.id) }}"
+                   class="btn btn-sm btn-danger"
+                   onclick="return confirm('Are you sure you want to cancel this subscription?');">
+                   Cancel
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="text-center text-muted">No subscriptions yet. Add one above!</td>
+            </tr>
+          {% endif %}
         </tbody>
       </table>
+
     </div>
   </div>
 </div>

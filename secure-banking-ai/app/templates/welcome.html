@@ -3,10 +3,17 @@
 {% block title %}Welcome - SecureBank{% endblock %}
 
 {% block content %}
-<div class="text-center mt-5">
-    <h1>Welcome to SecureBank</h1>
-    <p>Your secure banking solution</p>
-    <a href="{{ url_for('main.signup_view') }}" class="btn btn-primary">Create Account</a>
-    <a href="{{ url_for('main.login_view') }}" class="btn btn-secondary">Login</a>
+<div class="d-flex flex-column justify-content-center align-items-center vh-100 text-center bg-light">
+    <!-- Welcome Card -->
+    <div class="card shadow-lg p-5" style="max-width: 500px; border-radius: 20px; background: linear-gradient(135deg, #4e73df, #1cc88a); color: white;">
+        <h1 class="mb-3 fw-bold">Welcome to SecureBank</h1>
+        <p class="mb-4">Your secure banking solution</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('main.signup_view') }}" class="btn btn-light btn-lg fw-bold" style="color:#1cc88a;">Create Account</a>
+            <a href="{{ url_for('main.login_view') }}" class="btn btn-outline-light btn-lg fw-bold">Login</a>
+        </div>
+    </div>
+    <!-- Optional Footer Note -->
+    <p class="mt-4 text-muted">© 2025 SecureBank. All rights reserved.</p>
 </div>
 {% endblock %}

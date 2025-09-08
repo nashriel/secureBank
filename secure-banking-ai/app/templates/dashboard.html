@@ -98,7 +98,7 @@
               {% endfor %}
             </ul>
           {% else %}
-            <p>No cards added yet. <a href="{{ url_for('main.add_card_view') }}">Add a card</a></p>
+            <p>No cards added yet. <a href="{{ url_for('main.cards_view') }}">Add a card</a></p>
           {% endif %}
         </div>
       </div>
@@ -188,13 +188,24 @@
             <div class="accordion-body">
               {% if subscriptions %}
               <table class="table table-bordered">
-                <thead><tr><th>Name</th><th>Amount</th><th>Frequency</th></tr></thead>
+                <thead>
+                  <tr><th>Name</th><th>Amount</th><th>Frequency</th><th>Next Billing</th><th>Status</th><th>Action</th></tr>
+                </thead>
                 <tbody>
                   {% for sub in subscriptions %}
                   <tr>
                     <td>{{ sub.name }}</td>
                     <td>${{ sub.amount }}</td>
                     <td>{{ sub.frequency }}</td>
+                    <td>{{ sub.next_billing_date.strftime('%d-%m-%Y') if sub.next_billing_date else 'N/A' }}</td>
+                    <td>{{ 'Active' if sub.active else 'Inactive' }}</td>
+                    <td>
+                      <a href="{{ url_for('main.delete_subscription_view', sub_id=sub.id) }}"
+                         class="btn btn-sm btn-danger"
+                         onclick="return confirm('Are you sure you want to cancel this subscription?');">
+                         Cancel
+                      </a>
+                    </td>
                   </tr>
                   {% endfor %}
                 </tbody>

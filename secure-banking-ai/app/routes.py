@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models.models import db, Login, Account, Transaction, Card, Upi, Subscription
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import uuid
 
 main = Blueprint('main', __name__)
@@ -10,7 +10,6 @@ main = Blueprint('main', __name__)
 @main.route('/')
 def index_view():
     return render_template('welcome.html')
-
 
 # ---------------- Signup ----------------
 @main.route('/signup', methods=['GET', 'POST'])
@@ -93,7 +92,6 @@ def dashboard_view():
     balance = account.balance if account else 0.0
 
     if user.is_admin:
-        # Admin view: show all users with details
         all_users = Login.query.all()
         user_details = []
         for u in all_users:
@@ -118,7 +116,6 @@ def dashboard_view():
             all_users=user_details
         )
 
-    # Regular user view
     deposits = Transaction.query.filter_by(user_id=user.id, txn_type='deposit').all()
     withdrawals = Transaction.query.filter_by(user_id=user.id, txn_type='withdrawal').all()
     subscriptions = Subscription.query.filter_by(user_id=user.id).all()
@@ -200,12 +197,10 @@ def transfer_view():
             flash('Recipient not found!', 'danger')
             return redirect(url_for('main.transfer_view'))
 
-        # Update balances
         sender_account.balance -= amount
         recipient_account.balance += amount
         now = datetime.now(timezone.utc)
 
-        # Create transactions
         txn_sender = Transaction(
             user_id=sender.id,
             account_id=sender_account.id,
@@ -242,22 +237,58 @@ def subscription_view():
         return redirect(url_for('main.login_view'))
 
     user_id = session['user_id']
-    if request.method=='POST':
+
+    if request.method == 'POST':
         name = request.form.get('name')
         amount = float(request.form.get('amount'))
         frequency = request.form.get('frequency')
 
-        new_sub = Subscription(user_id=user_id, name=name, amount=amount, frequency=frequency)
+        now = datetime.utcnow()
+        if frequency == 'Weekly':
+            next_billing = now + timedelta(weeks=1)
+        elif frequency == 'Monthly':
+            next_billing = now + timedelta(days=30)
+        elif frequency == 'Yearly':
+            next_billing = now + timedelta(days=365)
+        else:
+            next_billing = None
+
+        new_sub = Subscription(
+            user_id=user_id,
+            name=name,
+            amount=amount,
+            frequency=frequency,
+            active=True,
+            created_at=now,
+            next_billing_date=next_billing
+        )
         db.session.add(new_sub)
         db.session.commit()
         flash('Subscription added successfully!', 'success')
         return redirect(url_for('main.subscription_view'))
 
     subs = Subscription.query.filter_by(user_id=user_id).all()
-    return render_template('subscription.html', subscriptions=subs)
+    return render_template('subscription.html', subscriptions=subs, username=session['username'])
 
 
-# ---------------- Admin: User Management ----------------
+@main.route('/subscription/delete/<int:sub_id>')
+def delete_subscription_view(sub_id):
+    if 'user_id' not in session:
+        flash('Please login first.', 'warning')
+        return redirect(url_for('main.login_view'))
+
+    sub = Subscription.query.get_or_404(sub_id)
+    if sub.user_id != session['user_id']:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('main.subscription_view'))
+
+    db.session.delete(sub)
+    db.session.commit()
+    flash('Subscription cancelled successfully.', 'success')
+    return redirect(url_for('main.subscription_view'))
+
+
+# ---------------- Admin ----------------
 @main.route('/delete_user/<int:user_id>')
 def delete_user_view(user_id):
     if not session.get('is_admin'):
@@ -282,6 +313,8 @@ def make_admin_view(user_id):
     return redirect(url_for('main.dashboard_view'))
 
 
+
+# ---------------- Card Management ----------------
 # ---------------- Card Management ----------------
 @main.route('/cards')
 def cards_view():
@@ -294,7 +327,7 @@ def cards_view():
     return render_template('cards.html', cards=cards, username=session['username'])
 
 
-@main.route('/cards/add', methods=['GET','POST'])
+@main.route('/cards/add', methods=['POST'])
 def add_card_view():
     if 'user_id' not in session:
         flash('Please login first.', 'warning')
@@ -305,24 +338,56 @@ def add_card_view():
         flash('Account not found.', 'danger')
         return redirect(url_for('main.cards_view'))
 
-    if request.method == 'POST':
-        card_type = request.form.get('card_type')
-        existing_cards = Card.query.filter_by(account_id=account.id, card_type=card_type).count()
-        if card_type == 'debit' and existing_cards >= 2:
-            flash('You can only have 2 debit cards.', 'danger')
-            return redirect(url_for('main.cards_view'))
-        if card_type == 'credit' and existing_cards >= 1:
-            flash('You can only have 1 credit card.', 'danger')
-            return redirect(url_for('main.cards_view'))
+    card_type = request.form.get('card_type')
+    card_number = request.form.get('card_number').strip()
+    expiry = request.form.get('expiry_date')
+    pin = request.form.get('pin')
 
-        card_number = str(uuid.uuid4().int)[:16]
-        new_card = Card(account_id=account.id, card_number=card_number, card_type=card_type)
-        db.session.add(new_card)
-        db.session.commit()
-        flash(f'{card_type.capitalize()} card added successfully!', 'success')
+    # Basic validations
+    if not card_number.isdigit() or len(card_number) != 16:
+        flash('Card number must be 16 digits!', 'danger')
+        return redirect(url_for('main.cards_view'))
+    if not pin.isdigit() or len(pin) != 4:
+        flash('PIN must be 4 digits!', 'danger')
         return redirect(url_for('main.cards_view'))
 
-    return render_template('add_card.html', username=session['username'])
+    cvv = str(uuid.uuid4().int)[:3]
+    hashed_pin = generate_password_hash(pin)
+
+    new_card = Card(
+        account_id=account.id,
+        card_number=card_number,
+        card_type=card_type,
+        expiry=expiry,
+        cvv=cvv,
+        pin=hashed_pin
+    )
+    db.session.add(new_card)
+    db.session.commit()
+    flash(f'{card_type.capitalize()} card added successfully!', 'success')
+    return redirect(url_for('main.cards_view'))
+
+
+@main.route('/cards/set_pin/<int:card_id>', methods=['POST'])
+def set_pin_view(card_id):
+    if 'user_id' not in session:
+        flash('Please login first.', 'warning')
+        return redirect(url_for('main.login_view'))
+
+    card = Card.query.get_or_404(card_id)
+    account = Account.query.filter_by(user_id=session['user_id']).first()
+    if card.account_id != account.id:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('main.cards_view'))
+
+    new_pin = request.form.get('pin')
+    if not new_pin.isdigit() or len(new_pin) != 4:
+        flash('PIN must be 4 digits!', 'danger')
+        return redirect(url_for('main.cards_view'))
+    card.pin = generate_password_hash(new_pin)
+    db.session.commit()
+    flash('PIN updated successfully!', 'success')
+    return redirect(url_for('main.cards_view'))
 
 
 @main.route('/cards/delete/<int:card_id>')
@@ -360,3 +425,99 @@ def toggle_card_view(card_id):
     status = 'unblocked' if not card.blocked else 'blocked'
     flash(f'Card {status} successfully.', 'success')
     return redirect(url_for('main.cards_view'))
+
+# ---------------- Deposit ----------------
+@main.route('/deposit', methods=['GET','POST'])
+def deposit_view():
+    if 'user_id' not in session:
+        flash('Please login first.', 'warning')
+        return redirect(url_for('main.login_view'))
+
+    user = Login.query.get(session['user_id'])
+    account = Account.query.filter_by(user_id=user.id).first()
+    if not account:
+        flash('Account not found.', 'danger')
+        return redirect(url_for('main.dashboard_view'))
+
+    if request.method=='POST':
+        try:
+            amount = float(request.form.get('amount'))
+            remarks = request.form.get('remarks','')
+        except ValueError:
+            flash('Invalid amount.', 'danger')
+            return redirect(url_for('main.deposit_view'))
+
+        if amount <=0:
+            flash('Amount must be > 0', 'danger')
+            return redirect(url_for('main.deposit_view'))
+
+        account.balance += amount
+        now = datetime.now(timezone.utc)
+
+        txn = Transaction(
+            user_id=user.id,
+            account_id=account.id,
+            txn_id=f"TXN{uuid.uuid4().hex[:12]}",
+            txn_type='deposit',
+            amount=amount,
+            remarks=remarks,
+            date=now
+        )
+        db.session.add(account)
+        db.session.add(txn)
+        db.session.commit()
+
+        flash(f'Deposited ${amount} successfully!', 'success')
+        return redirect(url_for('main.deposit_view'))
+
+    return render_template('deposit.html', balance=account.balance, username=user.username)
+
+
+# ---------------- Withdrawal ----------------
+@main.route('/withdraw', methods=['GET','POST'])
+def withdrawal_view():
+    if 'user_id' not in session:
+        flash('Please login first.', 'warning')
+        return redirect(url_for('main.login_view'))
+
+    user = Login.query.get(session['user_id'])
+    account = Account.query.filter_by(user_id=user.id).first()
+    if not account:
+        flash('Account not found.', 'danger')
+        return redirect(url_for('main.dashboard_view'))
+
+    if request.method=='POST':
+        try:
+            amount = float(request.form.get('amount'))
+            remarks = request.form.get('remarks','')
+        except ValueError:
+            flash('Invalid amount.', 'danger')
+            return redirect(url_for('main.withdrawal_view'))
+
+        if amount <=0:
+            flash('Amount must be > 0', 'danger')
+            return redirect(url_for('main.withdrawal_view'))
+        if amount > account.balance:
+            flash('Insufficient balance!', 'danger')
+            return redirect(url_for('main.withdrawal_view'))
+
+        account.balance -= amount
+        now = datetime.now(timezone.utc)
+
+        txn = Transaction(
+            user_id=user.id,
+            account_id=account.id,
+            txn_id=f"TXN{uuid.uuid4().hex[:12]}",
+            txn_type='withdrawal',
+            amount=amount,
+            remarks=remarks,
+            date=now
+        )
+        db.session.add(account)
+        db.session.add(txn)
+        db.session.commit()
+
+        flash(f'Withdrawn ${amount} successfully!', 'success')
+        return redirect(url_for('main.withdrawal_view'))
+
+    return render_template('withdrawal.html', balance=account.balance, username=user.username)
