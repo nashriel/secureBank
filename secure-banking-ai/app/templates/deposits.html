@@ -72,9 +72,9 @@
                 <td>{{ "Yes" if user.is_admin else "No" }}</td>
                 <td>
                   {% if not user.is_admin %}
-                  <a href="{{ url_for('main.make_admin', user_id=user.id) }}" class="btn btn-sm btn-primary">Make Admin</a>
+                  <a href="{{ url_for('main.make_admin_view', user_id=user.id) }}" class="btn btn-sm btn-primary">Make Admin</a>
                   {% endif %}
-                  <a href="{{ url_for('main.delete_user', user_id=user.id) }}" class="btn btn-sm btn-danger">Delete</a>
+                  <a href="{{ url_for('main.delete_user_view', user_id=user.id) }}" class="btn btn-sm btn-danger">Delete</a>
                 </td>
               </tr>
               {% endfor %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>{{ username | upper }}'s Subscriptions</h3>
+  <div class="card shadow-sm mt-3">
+    <div class="card-body">
+      <p>Manage your subscriptions here. (Example placeholders)</p>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Subscription Name</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Netflix</td>
+            <td>$12.99</td>
+            <td>Active</td>
+            <td><button class="btn btn-sm btn-danger">Cancel</button></td>
+          </tr>
+          <tr>
+            <td>Spotify</td>
+            <td>$9.99</td>
+            <td>Active</td>
+            <td><button class="btn btn-sm btn-danger">Cancel</button></td>
+          </tr>
+          <tr>
+            <td colspan="4" class="text-center text-muted">Add your subscriptions dynamically!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

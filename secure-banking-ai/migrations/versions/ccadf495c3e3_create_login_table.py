@@ -1,8 +1,8 @@
-"""Initial migration
+"""create login table
 
-Revision ID: 6d29ff8a5a81
+Revision ID: ccadf495c3e3
 Revises: 
-Create Date: 2025-09-08 09:09:39.268594
+Create Date: 2025-09-08 13:37:43.376327
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6d29ff8a5a81'
+revision = 'ccadf495c3e3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,16 +23,13 @@ def upgrade():
     sa.Column('fullname', sa.String(length=120), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('username', sa.String(length=80), nullable=False),
-    sa.Column('password', sa.String(length=255), nullable=False),
     sa.Column('phone', sa.String(length=20), nullable=True),
-    sa.Column('address', sa.String(length=255), nullable=True),
-    sa.Column('dob', sa.String(length=20), nullable=True),
-    sa.Column('aadhaar', sa.String(length=12), nullable=True),
-    sa.Column('pan', sa.String(length=10), nullable=True),
-    sa.Column('is_admin', sa.Boolean(), nullable=False),
+    sa.Column('password', sa.String(length=255), nullable=False),
+    sa.Column('is_admin', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('phone'),
     sa.UniqueConstraint('username')
     )
     op.create_table('account',
@@ -45,10 +42,24 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('account_number')
     )
+    op.create_table('subscription',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=120), nullable=False),
+    sa.Column('amount', sa.Float(), nullable=False),
+    sa.Column('frequency', sa.String(length=20), nullable=False),
+    sa.Column('active', sa.Boolean(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('next_billing_date', sa.DateTime(), nullable=True),
+    sa.Column('last_billed_date', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['login.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('card',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('account_id', sa.Integer(), nullable=False),
     sa.Column('card_number', sa.String(length=20), nullable=True),
+    sa.Column('card_type', sa.String(length=20), nullable=True),
     sa.Column('expiry', sa.String(length=10), nullable=True),
     sa.Column('cvv', sa.String(length=6), nullable=True),
     sa.Column('blocked', sa.Boolean(), nullable=True),
@@ -66,7 +77,7 @@ def upgrade():
     sa.Column('amount', sa.Float(), nullable=False),
     sa.Column('counterparty', sa.String(length=120), nullable=True),
     sa.Column('remarks', sa.String(length=255), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('date', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['account_id'], ['account.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['login.id'], ),
     sa.PrimaryKeyConstraint('id'),
@@ -89,6 +100,7 @@ def downgrade():
     op.drop_table('upi')
     op.drop_table('transactions')
     op.drop_table('card')
+    op.drop_table('subscription')
     op.drop_table('account')
     op.drop_table('login')
     # ### end Alembic commands ###
