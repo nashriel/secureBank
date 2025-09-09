@@ -1,274 +1,328 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+/* --- KPI Tiles --- */
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    font-family: "SF Pro Display", sans-serif;
+    background: rgba(255,255,255,0.7);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    color: #000;
+    transition: transform 0.2s ease;
+}
+.tile:hover { transform: translateY(-3px); }
+.tile h6 { font-size: 0.8rem; text-transform: uppercase; margin-bottom: 5px; color:#333; }
+.tile .value { font-size: 1.5rem; font-weight:bold; }
+
+/* --- Glass Card / Containers --- */
+.glass { 
+    background: rgba(255,255,255,0.6); 
+    backdrop-filter: blur(15px); 
+    border-radius:20px; 
+    padding:20px; 
+    color:#000; 
+    margin-bottom:20px; 
+}
+
+/* --- Bank Card --- */
+.bank-card { 
+    background: linear-gradient(135deg,#2e8cff,#1c4fdc); 
+    color:#fff; 
+    border-radius:25px; 
+    padding:20px; 
+    margin-bottom:20px; 
+    position:relative; 
+}
+.bank-card .brand-mini { font-size:0.9rem; font-weight:600; margin-bottom:10px; }
+.bank-card .number { font-size:1.4rem; letter-spacing:2px; margin-bottom:15px; }
+.bank-card .pair { display:flex; justify-content:space-between; font-size:0.85rem; }
+
+/* --- Table Card --- */
+.table-card {
+    width: 100%;
+}
+.table-card table { 
+    width: 100%; 
+    border-collapse: separate; 
+    border-spacing: 0; 
+    font-size: 0.85rem;       /* smaller font for admin table */
+}
+.table-card th, .table-card td { 
+    padding: 8px 10px;       /* smaller padding */
+    text-align:left; 
+    white-space: nowrap;      /* prevent text overlap */
+}
+.table-card th { 
+    background: rgba(0,0,0,0.05); 
+    border-bottom:1px solid rgba(0,0,0,0.1); 
+    font-weight:600; 
+}
+.table-card tbody tr:hover { background: rgba(0,0,0,0.05); }
+
+/* Ensure scrollable table does not overlap */
+.scrollable-table { 
+    max-height:600px; 
+    overflow-y:auto; 
+    overflow-x:auto;
+}
+
+/* --- Accordion Styling --- */
+.accordion-button { background: rgba(0,0,0,0.05); color:#000; font-weight:600; }
+.accordion-button:focus { box-shadow:none; }
+.accordion-button:hover { background: rgba(0,0,0,0.1); }
+.accordion-body { background: rgba(0,0,0,0.02); color:#000; padding:15px; transition: background 0.3s ease; }
+
+/* --- Greeting with Profile Icon --- */
+.greeting-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    font-size: 1.1rem; /* reduced size */
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 20px;
+}
+.greeting-header .profile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1c4fdc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.2rem;
+}
+</style>
+
 <div class="container-fluid">
-  <div class="row">
-    <div class="col-md-12">
-      <h2 class="mb-4">
-        {% if is_admin %}
-          👑 Admin Dashboard
-        {% else %}
-          👤 {{ username | upper }} Dashboard
-        {% endif %}
-      </h2>
+  <!-- Hello User Greeting with Profile Icon -->
+<h2 class="greeting-header">
+    <span class="profile-icon">
+        {{ username[0]|upper }}
+    </span>
+    {% if is_admin %}
+        Admin Dashboard.
+    {% else %}
+        Hey, {{ username | title }} 😊👋
+    {% endif %}
+</h2>
 
-      <!-- Quick Stats Cards -->
-      <div class="row mb-4">
-        <div class="col-md-3">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <h5 class="card-title">Total Deposits</h5>
-              <p class="card-text">
-                {% if not is_admin %}
-                  ${{ deposits | sum(attribute='amount') }}
-                {% else %}
-                  -
-                {% endif %}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <h5 class="card-title">Total Withdrawals</h5>
-              <p class="card-text">
-                {% if not is_admin %}
-                  ${{ withdrawals | sum(attribute='amount') }}
-                {% else %}
-                  -
-                {% endif %}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <h5 class="card-title">Current Balance</h5>
-              <p class="card-text text-success fw-bold">
-                {% if not is_admin %}
-                  ${{ balance }}
-                {% else %}
-                  -
-                {% endif %}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <h5 class="card-title">Subscriptions</h5>
-              <p class="card-text">
-                {% if not is_admin %}
-                  {{ subscriptions | length }}
-                {% else %}
-                  -
-                {% endif %}
-              </p>
-            </div>
-          </div>
+
+
+  <div class="row g-4">
+
+    <!-- KPI Tiles -->
+    <div class="col-md-3"><div class="tile glass">
+      <h6>Total Deposits</h6>
+      <div class="value">${{ '%.2f'|format(deposits|sum(attribute='amount')) }}</div>
+    </div></div>
+
+    <div class="col-md-3"><div class="tile glass">
+      <h6>Total Withdrawals</h6>
+      <div class="value">${{ '%.2f'|format(withdrawals|sum(attribute='amount')) }}</div>
+    </div></div>
+
+    <div class="col-md-3"><div class="tile glass">
+      <h6>Balance</h6>
+      <div class="value text-success">${{ '%.2f'|format(balance) }}</div>
+    </div></div>
+
+    <div class="col-md-3"><div class="tile glass">
+      <h6>Subscriptions</h6>
+      <div class="value">{{ subscriptions|length }}</div>
+    </div></div>
+
+    {% if not is_admin %}
+
+    <!-- User Cards (if any) -->
+    {% for card in cards %}
+    <div class="col-md-6">
+      <div class="bank-card">
+        <div class="brand-mini">{{ card.card_type|capitalize }} • SecureBank</div>
+        <div class="number">{{ card.card_number }}</div>
+        <div class="pair">
+          <div><small>Card Holder</small><br><strong>{{ user.fullname }}</strong></div>
+          <div><small>Expiry</small><br><strong>{{ card.expiry }}</strong></div>
         </div>
       </div>
-
-      {% if not is_admin %}
-      <!-- Regular User Dashboard -->
-
-      <!-- Account Details -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-header"><h5>Account Details</h5></div>
-        <div class="card-body">
-          <p><strong>Account Number:</strong> {{ account.account_number }}</p>
-          <p><strong>Balance:</strong> ${{ account.balance }}</p>
-          <p><strong>Email:</strong> {{ user.email }}</p>
-          <p><strong>Fullname:</strong> {{ user.fullname }}</p>
-          <p><strong>Username:</strong> {{ user.username }}</p>
-        </div>
-      </div>
-
-      <!-- Cards -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-header"><h5>Your Cards</h5></div>
-        <div class="card-body">
-          {% if cards %}
-            <ul>
-              {% for card in cards %}
-                <li>{{ card.card_type | capitalize }} - {{ card.card_number }} {% if card.blocked %}(Blocked){% endif %}</li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p>No cards added yet. <a href="{{ url_for('main.cards_view') }}">Add a card</a></p>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- UPI IDs -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-header"><h5>Your UPI IDs</h5></div>
-        <div class="card-body">
-          {% if upis %}
-            <ul>
-              {% for upi in upis %}
-                <li>{{ upi.upi_id }}</li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p>No UPI linked yet.</p>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Transactions & Subscriptions Accordion -->
-      <div class="accordion mb-4" id="transactionsAccordion">
-        <!-- Deposits -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingDeposits">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeposits" aria-expanded="false" aria-controls="collapseDeposits">
-              💵 Deposits ({{ deposits|length }})
-            </button>
-          </h2>
-          <div id="collapseDeposits" class="accordion-collapse collapse" aria-labelledby="headingDeposits" data-bs-parent="#transactionsAccordion">
-            <div class="accordion-body">
-              {% if deposits %}
-              <table class="table table-bordered">
-                <thead><tr><th>Txn ID</th><th>Amount</th><th>Date</th><th>Remarks</th></tr></thead>
-                <tbody>
-                  {% for txn in deposits %}
-                  <tr>
-                    <td>{{ txn.txn_id }}</td>
-                    <td>${{ txn.amount }}</td>
-                    <td>{{ txn.date.strftime('%d-%m-%Y %H:%M') }}</td>
-                    <td>{{ txn.remarks }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-              {% else %}<p>No deposits yet.</p>{% endif %}
-            </div>
-          </div>
-        </div>
-
-        <!-- Withdrawals -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingWithdrawals">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWithdrawals" aria-expanded="false" aria-controls="collapseWithdrawals">
-              💸 Withdrawals ({{ withdrawals|length }})
-            </button>
-          </h2>
-          <div id="collapseWithdrawals" class="accordion-collapse collapse" aria-labelledby="headingWithdrawals" data-bs-parent="#transactionsAccordion">
-            <div class="accordion-body">
-              {% if withdrawals %}
-              <table class="table table-bordered">
-                <thead><tr><th>Txn ID</th><th>Amount</th><th>Date</th><th>Remarks</th></tr></thead>
-                <tbody>
-                  {% for txn in withdrawals %}
-                  <tr>
-                    <td>{{ txn.txn_id }}</td>
-                    <td>${{ txn.amount }}</td>
-                    <td>{{ txn.date.strftime('%d-%m-%Y %H:%M') }}</td>
-                    <td>{{ txn.remarks }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-              {% else %}<p>No withdrawals yet.</p>{% endif %}
-            </div>
-          </div>
-        </div>
-
-        <!-- Subscriptions -->
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="headingSubs">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSubs" aria-expanded="false" aria-controls="collapseSubs">
-              📅 Subscriptions ({{ subscriptions|length }})
-            </button>
-          </h2>
-          <div id="collapseSubs" class="accordion-collapse collapse" aria-labelledby="headingSubs" data-bs-parent="#transactionsAccordion">
-            <div class="accordion-body">
-              {% if subscriptions %}
-              <table class="table table-bordered">
-                <thead>
-                  <tr><th>Name</th><th>Amount</th><th>Frequency</th><th>Next Billing</th><th>Status</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                  {% for sub in subscriptions %}
-                  <tr>
-                    <td>{{ sub.name }}</td>
-                    <td>${{ sub.amount }}</td>
-                    <td>{{ sub.frequency }}</td>
-                    <td>{{ sub.next_billing_date.strftime('%d-%m-%Y') if sub.next_billing_date else 'N/A' }}</td>
-                    <td>{{ 'Active' if sub.active else 'Inactive' }}</td>
-                    <td>
-                      <a href="{{ url_for('main.delete_subscription_view', sub_id=sub.id) }}"
-                         class="btn btn-sm btn-danger"
-                         onclick="return confirm('Are you sure you want to cancel this subscription?');">
-                         Cancel
-                      </a>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-              {% else %}<p>No subscriptions yet.</p>{% endif %}
-            </div>
-          </div>
-        </div>
-
-      </div>
-      {% endif %}
-
-      <!-- Admin Dashboard: Users Table -->
-      {% if is_admin %}
-      <div class="card shadow-sm mb-4">
-        <div class="card-header"><h5>All Users</h5></div>
-        <div class="card-body">
-          <table class="table table-bordered table-hover">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Fullname</th>
-                <th>Email</th>
-                <th>Username</th>
-                <th>Account Number</th>
-                <th>Balance</th>
-                <th>Cards</th>
-                <th>Subscriptions</th>
-                <th>Admin</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for u in all_users %}
-              <tr>
-                <td>{{ u.id }}</td>
-                <td>{{ u.fullname }}</td>
-                <td>{{ u.email }}</td>
-                <td>{{ u.username }}</td>
-                <td>{{ u.account_number }}</td>
-                <td>${{ u.balance }}</td>
-                <td>{{ u.num_cards }}</td>
-                <td>{{ u.num_subscriptions }}</td>
-                <td>{{ "Yes" if u.is_admin else "No" }}</td>
-                <td>
-                  {% if not u.is_admin %}
-                    <a href="{{ url_for('main.make_admin_view', user_id=u.id) }}" class="btn btn-sm btn-primary">Make Admin</a>
-                  {% endif %}
-                  <a href="{{ url_for('main.delete_user_view', user_id=u.id) }}" 
-                     class="btn btn-sm btn-danger"
-                     onclick="return confirm('Are you sure you want to delete this user?');">
-                     Delete
-                  </a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {% endif %}
-
     </div>
+    {% endfor %}
+
+    <!-- Always show Add Card -->
+    <div class="col-md-6">
+      <div class="glass table-card">
+        <h6>Add Card</h6>
+        <p><a href="{{ url_for('main.cards_view') }}">Click here to add a new card</a></p>
+      </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="col-md-6">
+      <div class="glass table-card">
+        <h6>Account Details</h6>
+        <table>
+          <tr><td>Account Number</td><td>{{ account.account_number }}</td></tr>
+          <tr><td>Balance</td><td>${{ '%.2f'|format(account.balance) }}</td></tr>
+          <tr><td>Email</td><td>{{ user.email }}</td></tr>
+          <tr><td>Fullname</td><td>{{ user.fullname }}</td></tr>
+          <tr><td>Username</td><td>{{ user.username }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- UPI IDs -->
+    <div class="col-md-6">
+      <div class="glass table-card">
+        <h6>Your UPI IDs</h6>
+        {% if upis %}
+          <ul>{% for upi in upis %}<li>{{ upi.upi_id }}</li>{% endfor %}</ul>
+        {% else %}
+          <p>No UPI linked yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Transactions Accordion -->
+    <div class="col-md-12">
+      <div class="glass table-card">
+        <div class="accordion" id="transactionsAccordion">
+
+          <!-- Deposits -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingDeposits">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeposits">
+                💵 Deposits ({{ deposits|length }})
+              </button>
+            </h2>
+            <div id="collapseDeposits" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                {% if deposits %}
+                <table>
+                  <thead><tr><th>ID</th><th>Amount</th><th>Date</th><th>Remarks</th></tr></thead>
+                  <tbody>
+                    {% for txn in deposits %}
+                    <tr>
+                      <td>{{ txn.txn_id }}</td><td>${{ '%.2f'|format(txn.amount) }}</td>
+                      <td>{{ txn.date.strftime('%d-%m-%Y %H:%M') }}</td><td>{{ txn.remarks }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% else %}<p>No deposits yet.</p>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Withdrawals -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingWithdrawals">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWithdrawals">
+                💸 Withdrawals ({{ withdrawals|length }})
+              </button>
+            </h2>
+            <div id="collapseWithdrawals" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                {% if withdrawals %}
+                <table>
+                  <thead><tr><th>ID</th><th>Amount</th><th>Date</th><th>Remarks</th></tr></thead>
+                  <tbody>
+                    {% for txn in withdrawals %}
+                    <tr>
+                      <td>{{ txn.txn_id }}</td><td>${{ '%.2f'|format(txn.amount) }}</td>
+                      <td>{{ txn.date.strftime('%d-%m-%Y %H:%M') }}</td><td>{{ txn.remarks }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% else %}<p>No withdrawals yet.</p>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscriptions -->
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="headingSubs">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSubs">
+                📅 Subscriptions ({{ subscriptions|length }})
+              </button>
+            </h2>
+            <div id="collapseSubs" class="accordion-collapse collapse">
+              <div class="accordion-body">
+                {% if subscriptions %}
+                <table>
+                  <thead><tr><th>Name</th><th>Amount</th><th>Frequency</th><th>Next Billing</th><th>Status</th><th>Action</th></tr></thead>
+                  <tbody>
+                    {% for sub in subscriptions %}
+                    <tr>
+                      <td>{{ sub.name }}</td><td>${{ '%.2f'|format(sub.amount) }}</td>
+                      <td>{{ sub.frequency }}</td>
+                      <td>{{ sub.next_billing_date.strftime('%d-%m-%Y') if sub.next_billing_date else 'N/A' }}</td>
+                      <td>{{ 'Active' if sub.active else 'Inactive' }}</td>
+                      <td>
+                        <a href="{{ url_for('main.delete_subscription_view', sub_id=sub.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Cancel subscription?');">Cancel</a>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% else %}<p>No subscriptions yet.</p>{% endif %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if is_admin %}
+    <!-- Admin Table -->
+    <div class="col-md-12">
+      <div class="glass table-card scrollable-table">
+        <h6>Admin Dashboard - Users</h6>
+        <table class="table table-bordered table-hover">
+          <thead>
+              <tr>
+              <th>ID</th><th>Fullname</th><th>Email</th><th>Username</th><th>AccountNo</th><th>Balance</th>
+              <th>Cards</th><th>Subscriptions</th><th>Admin</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in all_users %}
+            <tr>
+              <td>{{ u.id }}</td>
+              <td>{{ u.fullname }}</td>
+              <td>{{ u.email }}</td>
+              <td>{{ u.username }}</td>
+              <td>{{ u.account_number }}</td>
+              <td>${{ '%.2f'|format(u.balance) }}</td>
+              <td>{{ u.num_cards }}</td>
+              <td>{{ u.num_subscriptions }}</td>
+              <td>{{ 'Yes' if u.is_admin else 'No' }}</td>
+              <td>
+                {% if not u.is_admin %}
+                <a href="{{ url_for('main.make_admin_view', user_id=u.id) }}" class="btn btn-sm btn-success">Make Admin</a>
+                {% endif %}
+                <a href="{{ url_for('main.delete_user_view', user_id=u.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete user?');">Delete</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}

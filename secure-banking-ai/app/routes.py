@@ -109,13 +109,21 @@ def dashboard_view():
                 "is_admin": u.is_admin
             })
 
+        # Pass placeholder values for admin to avoid UndefinedError in template
         return render_template(
             'dashboard.html',
             username=user.fullname.upper(),
             is_admin=True,
-            all_users=user_details
+            all_users=user_details,
+            balance=0.0,             # placeholder
+            deposits=[],             # placeholder
+            withdrawals=[],          # placeholder
+            subscriptions=[],        # placeholder
+            cards=[],                # placeholder
+            upis=[]                  # placeholder
         )
 
+    # Regular user logic
     deposits = Transaction.query.filter_by(user_id=user.id, txn_type='deposit').all()
     withdrawals = Transaction.query.filter_by(user_id=user.id, txn_type='withdrawal').all()
     subscriptions = Subscription.query.filter_by(user_id=user.id).all()
@@ -136,10 +144,10 @@ def dashboard_view():
         upis=upis
     )
 
-
 # ---------------- Transactions ----------------
 @main.route('/transactions')
 def transactions_view():
+    
     if 'user_id' not in session:
         flash('Please login first.', 'warning')
         return redirect(url_for('main.login_view'))
@@ -312,9 +320,6 @@ def make_admin_view(user_id):
     flash(f'{user.fullname} is now an admin.', 'success')
     return redirect(url_for('main.dashboard_view'))
 
-
-
-# ---------------- Card Management ----------------
 # ---------------- Card Management ----------------
 @main.route('/cards')
 def cards_view():
