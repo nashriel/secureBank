@@ -20,28 +20,49 @@ A modern web-based online banking system built with **Python, Flask, and Machine
 
 ```bash
 secure-banking-ai/
-│
-├── app/
-│   ├── __init__.py               # Flask app initialization
-│   ├── routes.py                 # All route definitions (views)
-│   ├── templates/                # HTML templates (Jinja2)
-│   │   ├── base.html
-│   │   └── dashboard.html
-│   ├── static/                   # CSS, JS, image files
-│   │   ├── css/
-│   │   ├── js/
-│   ├── models/                   # Database models (User, Transactions)
-│   │   └── models.py
+├── README.md
+├── app
+│   ├── __init__.py
+│   ├── routes.py
+│   ├── reset_db.py
+│   ├── utils.py
 │   ├── ml/
-│   │   └── fraud_detector.pkl    # Pre-trained fraud detection model
+│   │   └── fraud_detector.pkl
+│   ├── models/
+│   │   └── models.py
+│   ├── static/
+│   │   ├── css/
+│   │   ├── img/
+│   │   └── js/
+│   ├── templates/
+│   │   ├── base.html
+│   │   ├── cards.html
+│   │   ├── dashboard.html
+│   │   ├── deposit.html
+│   │   ├── login.html
+│   │   ├── signup.html
+│   │   ├── subscription.html
+│   │   ├── transactions.html
+│   │   ├── transfer.html
+│   │   ├── users.html
+│   │   ├── welcome.html
+│   │   └── withdrawal.html
 │   └── utils/
-│       └── pdf_generator.py      # PDF generation logic
-│
-├── config.py                     # App configuration (DB URI, secret key)
-├── run.py                        # Main entry point to start the Flask app
-├── requirements.txt              # Python dependencies
-├── README.md                     # Project overview (this file)
-└── .gitignore                    # Ignore venv, __pycache__, etc.
+│       └── pdf_generator.py
+├── config.py
+├── flask_session/   # runtime session storage
+├── migrations/
+│   ├── alembic.ini
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions/
+│       ├── b13909770384_add_pin_column_to_card.py
+│       └── ccadf495c3e3_create_login_table.py
+├── populate_random_db.py
+├── requirements.txt
+├── run.py
+└── securebank.db
+
 ````
 
 ---
